@@ -8,7 +8,7 @@ from aiohttp import web
 
 BOT_TOKEN = "8834440378:AAEwznb4TAwwjZQpcBQPEOEAuYbt7R-k4IU"
 ADMIN_ID  = 8794869188
-SERVER_URL = os.environ.get("SERVER_URL", "https://YOUR_RAILWAY_URL.up.railway.app")
+SERVER_URL = os.environ.get("SERVER_URL", "https://web-production-e63ef.up.railway.app")
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
